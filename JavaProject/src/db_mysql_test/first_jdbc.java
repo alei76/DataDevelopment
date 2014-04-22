@@ -1,33 +1,27 @@
-package pr_test_db;
-
-
+package db_mysql_test;
 
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.mysql.jdbc.Connection;
-import com.mysql.jdbc.PreparedStatement;
 import com.mysql.jdbc.Statement;
 
 
 
-public class JDBCDemo {
+public class first_jdbc {
 	
 	  // JDBC driver name and database URL
 	   static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-	   static final String DB_URL ="jdbc:mysql://localhost:3306/test";
+	   static final String DB_URL ="jdbc:mysql://112.124.97.43:3306/haharili_log";
 
 	   //  Database credentials
-	   static final String USER = "root";
-	   static final String PASS = "gaoxin";
+	   static final String USER = "developer";
+	   static final String PASS = "DN3v74JB";
 
-	   public static void main(String[] args)
-	   {
-		   
+	   public static void main(String[] args) {
 	   Connection conn = null;
-	   Statement queryStmt = null;
-	   
+	   Statement stmt = null;
 	   try{
 	      //STEP 2: Register JDBC driver
 	      
@@ -39,47 +33,24 @@ public class JDBCDemo {
 
 	      //STEP 4: Execute a query
 	      System.out.println("Creating statement...");
-	      
-	      /////
-	      queryStmt = (Statement) conn.createStatement();
-	      
-	     // String sql="creat table `demo_table`(`id` int(10),`name` varchar(40),`birth` int(11),PRIMARY KEY (`id`))";
-	      
-	     // PreparedStatement ps=(PreparedStatement) conn.prepareStatement(sql);
-	      //ps.execute();
-	      
-	      String sql="insert into demo_table"
-	      + "(name,birth)"
-	    		  +
-	    		" values(?,?)";
-	    					
-	      PreparedStatement pstatement = (PreparedStatement) conn.prepareStatement(sql,ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY); 
-		  //id 设置为auto_increament 后不需要设置
-		  pstatement.setString(1, "li");
-		  pstatement.setLong(2,20010311);
-				
-		
-	      pstatement.execute();
-		  
-	      
-	      
-	      
-	      sql = "SELECT * FROM demo_table";
-	      ResultSet rs = queryStmt.executeQuery(sql);
+	      stmt = (Statement) conn.createStatement();
+	      String sql;
+	      sql = "SELECT * FROM install20131216";
+	      ResultSet rs = stmt.executeQuery(sql);
 
 	      //STEP 5: Extract data from result set
 	      while(rs.next()){
 	         //Retrieve by column name
 	         int id  = rs.getInt("id");
-	         String name = rs.getString("name");
+	         String time = rs.getString("time");
 	         
 	         //Display values
 	         System.out.print("ID: " + id);
-	         System.out.println("name: " + name);
+	         System.out.println("time: " + time);
 	      }
 	      //STEP 6: Clean-up environment
 	      rs.close();
-	      queryStmt.close();
+	      stmt.close();
 	      conn.close();
 	   }catch(SQLException se){
 	      //Handle errors for JDBC
@@ -90,8 +61,8 @@ public class JDBCDemo {
 	   }finally{
 	      //finally block used to close resources
 	      try{
-	         if(queryStmt!=null)
-	            queryStmt.close();
+	         if(stmt!=null)
+	            stmt.close();
 	      }catch(SQLException se2){
 	      }// nothing we can do
 	      try{
@@ -105,6 +76,5 @@ public class JDBCDemo {
 	}//end main
 
 }
-
 
 
