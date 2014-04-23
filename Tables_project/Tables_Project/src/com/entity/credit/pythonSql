@@ -1,0 +1,13 @@
+CREATE TABLE `credit_all_user_stat` (
+		  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+		  `date` int(10) unsigned NOT NULL COMMENT '时间',
+		  /*select [?]*/
+		  `vendor` varchar(15) NOT NULL COMMENT '渠道',
+		  /*select from [?]*/
+		  `online_count` int(15) NOT NULL COMMENT '当日检测到的在线用户数',
+		  /*select from */
+		  `download_Count` int(10) NOT NULL COMMENT '当日至少在app里下载一个第三方应用的用户数',
+		  `active_count` int(32) NOT NULL COMMENT '当日至少打开过一次赚金币的用户',
+		  `launch_count` decimal(6,2) unsigned DEFAULT NULL COMMENT '当日通过赚金币至少主动打开过一次第三方应用的用户',
+		  PRIMARY KEY (`id`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='haha日历总用户统计表'

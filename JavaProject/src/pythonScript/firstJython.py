@@ -11,7 +11,7 @@ if __name__ == "__main__":
     
 import re   
 pchinese=re.compile('`*`') #�ж��Ƿ�Ϊ���ĵ�������ʽ
-fin=open("D:/pythonWorkspace/resources/mysqlStmt") #��Ҫ��ȡ���ļ�
+fin=open("E:/eclipseWorkspace/pythonWorkspace/resources/mysqlStmt") #��Ҫ��ȡ���ļ�
 fw=open("outdata.txt","w")#��Ҫд����ļ�
 fin.seek(0)# go to the beginning of the file
 #######################################################################

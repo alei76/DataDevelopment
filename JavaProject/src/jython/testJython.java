@@ -72,6 +72,14 @@ public class testJython {
 		
 		PyObject obj=interp1.get("a");
 		System.out.println("a = " + obj);
+		
+		PyObject a = interp1.get("a");
+		System.out.println("a = " + a);
+		
+		// If you know the type, a more useful method // is the overloaded get() that takes the // desired class as the 2nd argument: 
+		interp1.exec("x = 1 + 2"); 
+		int x2 = ((Integer)interp1.get("x", Integer.class)).intValue(); 
+		System.out.println("x = " + x2);
 	}
 	
 	
