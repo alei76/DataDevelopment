@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.example.org/JavaBeanXMLSchema" xmlns:tns="http://www.example.org/JavaBeanXMLSchema" elementFormDefault="qualified">
+<element name="books">
+    <complexType>
+        <sequence>
+            <element name="book" minOccurs="0" maxOccurs="unbounded">
+                <complexType>
+                    <sequence>
+                        <element name="name" type="string"></element>
+                        <element name="price" type="double"></element>
+                    </sequence>
+                </complexType>
+            </element>
+        </sequence>
+    </complexType>
+</element>
+ <element name="name" type="string"></element>
+
+  <element name="company">
+        <complexType>
+            <sequence>
+                <element name="employee">
+                    <complexType>
+                        <sequence>
+                            <any></any>
+                            <element name="name"></element>
+                        </sequence>
+                        <attribute name="age" type="int"></attribute>
+                    </complexType>
+                </element>
+            </sequence>
+        </complexType>
+    </element>
+</schema>

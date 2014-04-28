@@ -1,13 +1,91 @@
+sql语句的分类：
+getInsertSQL：获得插入数据库表记录的sql语句，insert
+getAllQuerySQL：获得拼接成整个表的整个sql语句
+getColumnQuerySQL：获得javaBean的单个列的
+
+[select FROM_UNIXTIME(1156219870)]
+
+通过时间戳获取当天的数据(已经验证)
+[select * from lottery_data as a where a.inputtime>unix_timestamp('20140424') and a.inputtime<unix_timestamp('20140425')]
+用户标识等表格在money.member这个表里(已经验证)
+[select * from money.lottery_data as a inner join money.member as b on a.member_id=b.id ]
+【download count: member_app_data:use_type=4】
+
+/*SELECT * FROM money.lottery_data*/
 CREATE TABLE `credit_all_user_stat` (
 		  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
 		  `date` int(10) unsigned NOT NULL COMMENT '时间',
-		  /*select [?]*/
-		  `vendor` varchar(15) NOT NULL COMMENT '渠道',
-		  /*select from [?]*/
+		  /*select [?] 直接设定今天的日期*/
+		  `vendor` varchar(15) NOT NULL COMMENT '渠道:即从哪个市场下载了赚金币，从member_id来获得',
+		  /*按照不同的渠道group by：已经经过验证，会产生多行的结果：select b.qid from money.lottery_data as a inner join money.member as b on a.member_id=b.id where a.inputtime>unix_timestamp('20140424') and a.inputtime<unix_timestamp('20140425')*/
 		  `online_count` int(15) NOT NULL COMMENT '当日检测到的在线用户数',
-		  /*select from */
+		  /*已经经过验证，单个结果select count(distinct a.member_id)  from lottery_data as a where a.inputtime>unix_timestamp('20140424') and a.inputtime<unix_timestamp('20140425')*/
 		  `download_Count` int(10) NOT NULL COMMENT '当日至少在app里下载一个第三方应用的用户数',
+		  /*已经验证过了：select count(distinct a.member_id) from (money.member_app_data as a left join money.member as b on a.member_id=b.id) where a.usetype=4 group by b.qid*/
 		  `active_count` int(32) NOT NULL COMMENT '当日至少打开过一次赚金币的用户',
+		  /*已经验证过select count(distinct a.member_id) from (money.member_app_data as a left join money.member as b on a.member_id=b.id)group by b.qid*/
 		  `launch_count` decimal(6,2) unsigned DEFAULT NULL COMMENT '当日通过赚金币至少主动打开过一次第三方应用的用户',
+		  /*已经验证过了select count(distinct a.member_id) from (money.member_app_data as a left join money.member as b on a.member_id=b.id) where a.usetype=2 group by b.qid*/
 		  PRIMARY KEY (`id`)
-		) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='haha日历总用户统计表'
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='赚金币总用户统计表'
+	
+			
+CREATE TABLE `credit_new_user_stat` (
+
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `Time` int(10) unsigned NOT NULL COMMENT '时间',
+    /*select */
+  `vendor` varchar(15) NOT NULL COMMENT '渠道',
+  `InstallCount` int(10) NOT NULL COMMENT '当日新用户安装量',
+  `downloadCount` int(10) NOT NULL COMMENT '当日下载用户数',
+  `LaunchCount` int(32) NOT NULL COMMENT '当日新用户服务启动量',
+  `ActiveCount` int(32) NOT NULL COMMENT '当日新用户活跃量',
+  `NextDayActiveCount` int(32) NOT NULL COMMENT '次日用户活跃量',
+  `NextDayActiveRate` decimal(6,2) unsigned DEFAULT NULL COMMENT '次日活跃率',
+  `WeekActiveCount` int(32) NOT NULL COMMENT '7日活跃量',
+  `WeekActiveRate` decimal(6,2) unsigned DEFAULT NULL COMMENT '7日活跃率',
+  `MonthActiveCount` int(32) NOT NULL COMMENT '30日活跃量',
+  `MonthActiveRate` decimal(6,2) unsigned DEFAULT NULL COMMENT '30日活跃率',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=150 DEFAULT CHARSET=utf8 COMMENT='赚金币新用户统计表'
+
+
+
+/*不同版本的数据*/
+CREATE TABLE `credit_edition_stat` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `Time` int(10) unsigned NOT NULL COMMENT '时间',
+  /*select [?]*/
+  `vendor` int(10) unsigned NOT NULL COMMENT '渠道',
+  `Edition` varchar(60) NOT NULL COMMENT '版本号',
+  `InstallCount` int(10) NOT NULL COMMENT '不同版本的每日用户安装量',
+  `ActiveCount` int(10) NOT NULL COMMENT '不同版本的每日用户量（打开赚金币）',
+  `useCount` int(10) NOT NULL COMMENT '不同版本的每日用户打开APP并至少下载一款第三方应用的用户数',  
+   PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=91 DEFAULT CHARSET=utf8 COMMENT='赚金币版本统计表'
+
+
+/*交易基础数据*/
+CREATE TABLE `credit_transaction_stat` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `Time` int(10) unsigned NOT NULL COMMENT '时间',
+  `raffleCount` int(10) NOT NULL COMMENT '当日抽奖次数',
+  `rafflenum` int(10) NOT NULL COMMENT '当日抽奖用户数',
+  `issuecount` int(10) NOT NULL COMMENT '当日积分发放量', 
+  `issuenum` int(10) NOT NULL COMMENT '当日积分发放用户数',
+  `tradecount` int(10) NOT NULL COMMENT '当日使用积分用户数',
+  `tradenum` int(10) NOT NULL COMMENT '当日使用积分用户数',    
+   PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=91 DEFAULT CHARSET=utf8 COMMENT='赚金币交易数据统计表'
+
+
+/*第三方推荐数据表*/
+CREATE TABLE `credit_thirdParty_recommend` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `Time` int(10) unsigned NOT NULL COMMENT '时间',
+  `softwareName` int(10) NOT NULL COMMENT '软件名称',
+  `downloadCount` int(10) NOT NULL COMMENT '下载量',
+  `launchcount` int(10) NOT NULL COMMENT '安装后主动打开次数（把主动去掉）：第三方软件安装后客户端主动帮用户打开的情况', 
+  `totalLaunchCount` int(10) NOT NULL COMMENT '不去重，一共打开了多少次',
+   PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=91 DEFAULT CHARSET=utf8 COMMENT='赚金币第三方统计表'
