@@ -1,6 +1,9 @@
 package com.entity.haha;
 
+
+
 import com.dao.hahaCal.EnumBeanFieldType;
+import com.sunxd.common.entity.BeanFactory;
 
 /**
 *此类由MySQLToBean工具自动生成
@@ -32,8 +35,6 @@ public class AllUserStatBean implements IMysqlBean
 	private int ActiveCount;//当日总活跃量
 	private Double UninstallRate;////////?????????????????????????
 	private int TotalVCU;//总vcu总有效用户
-	
-	
 	
 	public int getTime() {
 		return Time;
