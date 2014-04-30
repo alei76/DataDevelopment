@@ -1,4 +1,4 @@
-package ChainOfResponsibility;
+package demo;
 
 public  class DemoChainOfResponsibility
 {

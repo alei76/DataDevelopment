@@ -376,7 +376,7 @@ public class DAOBase {
 		
 		IMysqlBean temp=null;
 		
-		//交织后组装到一起
+		//交织后组装到一起，此处要用结果的长度最大的那个字段作为columnNum，其他字段的结果都用这个来orderby，如果某个字段的结果的长度不够，则填充为null
 		
 		for(int i=0;i<beanNum;i++)
 		{

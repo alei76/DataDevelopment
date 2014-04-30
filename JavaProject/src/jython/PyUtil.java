@@ -1,4 +1,5 @@
-package com;
+package jython;
+
 
 import java.util.HashMap;
 import java.util.Hashtable;

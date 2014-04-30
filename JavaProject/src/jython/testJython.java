@@ -9,7 +9,6 @@ import org.python.core.PyInteger;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 
-import com.PyUtil;
 
 public class testJython {
 

@@ -34,8 +34,9 @@ CREATE TABLE `credit_new_user_stat` (
 
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `Time` int(10) unsigned NOT NULL COMMENT '时间',
-    /*select */
+   /*select [?] 直接设定今天的日期*/
   `vendor` varchar(15) NOT NULL COMMENT '渠道',
+  /*按照不同的渠道group by：已经经过验证，会产生多行的结果：select b.qid from money.lottery_data as a inner join money.member as b on a.member_id=b.id where a.inputtime>unix_timestamp('20140424') and a.inputtime<unix_timestamp('20140425')*/
   `InstallCount` int(10) NOT NULL COMMENT '当日新用户安装量',
   `downloadCount` int(10) NOT NULL COMMENT '当日下载用户数',
   `LaunchCount` int(32) NOT NULL COMMENT '当日新用户服务启动量',
