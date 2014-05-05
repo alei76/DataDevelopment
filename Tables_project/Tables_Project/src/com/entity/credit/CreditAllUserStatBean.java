@@ -32,10 +32,12 @@ public class CreditAllUserStatBean implements IMysqlBean
 	/**以下开始JAVABEAN*/
 	private int date;
 	private String vendor;//渠道
-	private int online_count;//当日检测到的在线用户数
+	//
+	private int online_count;//当日检测到的赚金币的在线用户数
+	private int active_count;//当日至少打开过一次赚金币的用户，主动操作过
+	//
 	private int download_Count;//当日至少在app里下载一个第三方应用的用户数
-	private int active_count;//当日至少打开过一次赚金币的用户
-	private String launch_count;
+	private String launch_count;//当日在赚金币里打开过第三方软件的用户数
 	////////////////////////////////////////////////////////////////////////////
 	public int getDate() {
 		return date;

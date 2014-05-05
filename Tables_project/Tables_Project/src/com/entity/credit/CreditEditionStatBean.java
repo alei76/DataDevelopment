@@ -38,8 +38,8 @@ public class CreditEditionStatBean{
 	
 	
 	private String Edition;//版本号
-	private int InstallCount;//不同版本的每日用户安装量
-	private int ActiveCount;//不同版本的每日用户量（打开赚金币）
+	private int InstallCount;//不同版本的每日用户安装量，每天安装了该版本的赚金币的用户数量。
+	private int ActiveCount;//不同版本的每日用户量（打开赚金币大于1次的用户数）
 	private int useCount;//不同版本的每日用户打开APP并至少下载一款第三方应用的用户数
 	
 	

@@ -1,35 +1,58 @@
 package com.entity.credit;
 
+import com.sunxd.common.EnumBeanFieldType;
+
+import com.sunxd.common.entity.AnnotationGenSQL4Bean;
+
 public class CreditThirdPartyRecommend {
 
+	private int date;
 	private int softwareName;//软件名称
 	private int downloadCount;//下载量
-	private int launchcount;//安装后主动打开次数（把主动去掉）：第三方软件安装后客户端主动帮用户打开的情况
-	private int totalLaunchCount;//不去重，一共打开了多少次
-	public int getSoftwareName(){
-		return this.softwareName;
+	private int autolaunchcount;//安装后赚金币帮用户打开的次数：第三方软件安装后客户端主动帮用户打开的情况
+	private int intentLaunchCount;//用户主动打开的次数
+	//1安装 2第三方第应用打开（用户主动打开） 3第三方应用安装（自动打开） 4第三方应用下载',
+	
+	
+	public int getDate() {
+		return date;
 	}
-	public void setSoftwareName(int softwareName){
-		this.softwareName=softwareName;
+	public void setDate(int date) {
+		this.date = date;
 	}
-	public int getDownloadCount(){
-		return this.downloadCount;
+	
+	
+	public int getSoftwareName() {
+		return softwareName;
 	}
-	public void setDownloadCount(int downloadCount){
-		this.downloadCount=downloadCount;
+	public void setSoftwareName(int softwareName) {
+		this.softwareName = softwareName;
 	}
-	public int getLaunchcount(){
-		return this.launchcount;
+	public int getDownloadCount() {
+		return downloadCount;
 	}
-	public void setLaunchcount(int launchcount){
-		this.launchcount=launchcount;
+	//产生多行数据 
+	@AnnotationGenSQL4Bean(sql1="select * from member_app_data where usetype=4 group by app_name",et=EnumBeanFieldType.STRING, TbColumnName = "Time")
+	public void setDownloadCount(int downloadCount) {
+		this.downloadCount = downloadCount;
 	}
-	public int getTotalLaunchCount(){
-		return this.totalLaunchCount;
+	public int getAutolaunchcount() {
+		return autolaunchcount;
 	}
-	public void setTotalLaunchCount(int totalLaunchCount){
-		this.totalLaunchCount=totalLaunchCount;
+	@AnnotationGenSQL4Bean(sql1="select * from member_app_data where usetype=3 group by app_name",et=EnumBeanFieldType.STRING, TbColumnName = "Time")
+	public void setAutolaunchcount(int autolaunchcount) {
+		this.autolaunchcount = autolaunchcount;
+	}
+	public int getIntentLaunchCount() {
+		return intentLaunchCount;
+	}
+	@AnnotationGenSQL4Bean(sql1="select * from member_app_data where usetype=2 group by app_name",et=EnumBeanFieldType.STRING, TbColumnName = "Time")
+	public void setIntentLaunchCount(int intentLaunchCount) {
+		this.intentLaunchCount = intentLaunchCount;
 	}
 
+	
+	
+	
 
 }

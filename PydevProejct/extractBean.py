@@ -4,7 +4,7 @@ Created on 2014��4��22��
 
 @author: xudong sun
 '''
-import urllib2
+
 
 if __name__ == "__main__":
     print "Hello PyDev!"
