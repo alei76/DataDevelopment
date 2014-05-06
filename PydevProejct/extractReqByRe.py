@@ -14,6 +14,7 @@ def main():
     #\s matches any white space character
     #. matches any character except the newline character
     foundSpan = re.search('<span\s+?style=".*">(?P<myname>.+?)</span>',respHtml)
+    reiter = re.finditer('<span\s+?style=".*">(?P<myname>.+?)</span>',respHtml)
     #(?....)是python的正则表达式的拓展
     # (?P<name>...) defines a named group, and (?P=name) is a backreference to a named group
     
@@ -22,6 +23,11 @@ def main():
         h1user = foundSpan.group("myname");  # 提取当时的
         #group() returns the substring that was matched by the RE. start() and end() return the starting and ending index of the match
         print "h1user=",h1user;
+        
+    if reiter:
+        for pat in reiter:
+            print pat.span();
+            print pat.group();
     ###############################################################################
 if __name__=="__main__":
     main()

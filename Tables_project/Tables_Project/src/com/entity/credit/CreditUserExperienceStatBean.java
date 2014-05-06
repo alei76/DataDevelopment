@@ -8,8 +8,11 @@ public class CreditUserExperienceStatBean implements IMysqlBean{
 	
 	private int click_count;  // 总点击次数
 	private int click_usernum;// 总点击用户数
+	String sql="select sum(a.times)as use_count,count(distinct member_id) as user_num,module,function,date from (select times,member_id ,module,function,DATE_FORMAT(stampdate, '%y%m%d')as date from money.hotspot)as a group by a.date,a.module,a.function";
 	
 	
+	
+	String finalsql="";
 	@Override
 	public String getSQL_insert() {
 		// TODO Auto-generated method stub

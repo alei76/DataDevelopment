@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<req name="基础数据：参与表lottery_data,member_app_data,member----问题是查询出的结果的每一列不相同" status="concate sql logic right">
+<sql comment="选出所有的渠道">
+set @sql0:="select distinct b.qid from money.member as b"
+</sql>
+<sql comment="# 当日服务启动量,只要在线就会检测到，从lottery_data里选择日期,通过member_id来join lottery_data和member选择出渠道">
+set @sql1:="select 20140423,b.qid as qid,count(distinct a.member_id)as launch_count from lottery_data as a right join money.member as b on a.member_id=b.id where a.inputtime>unix_timestamp('20140423') and a.inputtime<unix_timestamp('20140424')"
+</sql>
+
+<sql comment="# 活跃，任何一种usetype都算活跃，这里是从member_app_data里取不同的用户，而不是从lottery_data里">
+set @sql2:="select b.qid,count(distinct a.member_id)as active_count from (money.member_app_data as a left join money.member as b on a.member_id=b.id)where a.inputtime>unix_timestamp('20140423') and a.inputtime<unix_timestamp('20140424') group by b.qid"  
+</sql>
+
+ <sql comment="dowload usetype=4 表示下载">
+set @sql3:="select b.qid,count(distinct a.member_id)as download_count from (money.member_app_data as a left join money.member as b on a.member_id=b.id) where a.usetype=4 and a.inputtime>unix_timestamp('20140423') and a.inputtime<unix_timestamp('20140424') group by b.qid" 
+ </sql>
+ 
+<sql comment="# usetype 为2表示打开第三方应用">
+set @sql4:="select b.qid,count(distinct a.member_id)as third_count from (money.member_app_data as a left join money.member as b on a.member_id=b.id) where a.usetype=2 group by b.qid"  
+</sql>
+
+<python comment="用python将语句用comma分割开来">
+select z.qid,a.launch_count,b.active_count,c.download_count,d.third_count from (@sql0)as z left join (@sql1)as a on z.qid=a.qid left join (@sql2)as b on a.qid=b.qid left join (@sql3)as c on b.qid=c.qid left join (@sql4) as d on c.qid=d.qid
+</python>
+<allsql comment="根据渠道来拼接">
+set @inter6:=concat("select z.qid,a.launch_count,b.active_count,c.download_count,d.third_count from  (", @sql0 ,") as z left join  (", @sql1 ,") as a on z.qid=a.qid left join  (", @sql2 ,") as b on a.qid=b.qid left join  (", @sql3 ,") as c on b.qid=c.qid left join  (", @sql4 ,")  as d on c.qid=d.qid")
+prepare stmt from @inter6
+execute stmt
+</allsql>
+
+</req>
+
+
+<req name="新用户数据，member表里有注册时间这个字段，选择当天即可以选择新用户" status="concate logic ok">
+
+<sql comment="选出所有的渠道">
+set @sql0:="select distinct b.qid from money.member as b"
+</sql>
+<sql comment="qid,当日新安装用户数：只要在member表里查询当天注册即可，注册即安装">
+set @sql1="select distinct a.qid,count(distinct id)as install_count from money.member as a where a.reg_date>unix_timestamp('20140423') and a.reg_date<unix_timestamp('20140429')  group by a.qid"
+</sql>
+
+<sql comment="qid,当日新用户活跃数#各种动作都算活跃，仍然选择member表里的时间符合范围的，但是在member_app_data里记录操作数，一个记录表示一个操作">
+set @sql2="select b.qid,count(distinct a.member_id)as active_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where b.reg_date>unix_timestamp('20140423') and b.reg_date<unix_timestamp('20140424') group by b.qid"
+</sql>
+
+<sql comment="当日下载新用户数:usetype=4表示下载">
+set @sql3="select b.qid,count(distinct a.member_id)as download_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where a.usetype=4 and b.reg_date>unix_timestamp('20140423') and b.reg_date<unix_timestamp('20140424') group by b.qid"
+</sql>
+<python>select * from (@sql0)as z left join (@sql1)as a on z.qid=a.qid left join (@sql2)as b on a.qid=b.qid left join (@sql3)as c on b.qid=c.qid</python>
+<allsql>
+set @inter:=concat("select * from  (", @sql0 ,")as z left join  (", @sql1 ,")as a on z.qid=a.qid left join  (", @sql2 ,")as b on a.qid=b.qid left join  (", @sql3 ,")as c on b.qid=c.qid")
+prepare stmt from @inter
+execute stmt
+</allsql>
+</req>
+	
+
+	
+
+<req name="transaction" status="ok">
+<col>
+	 <sql comment="当日抽奖总次数:只计算次数不需要去重">
+     	select FROM_UNIXTIME(inputtime,'%y%m%d') as date,count(a.member_id)as raffle_count,count(distinct a.member_id)as raffle_user_num from money.lottery_data as a where a.type=1 group by FROM_UNIXTIME(inputtime,'%y%m%d')
+     </sql>
+	
+</col>
+ 
+ <col>
+	 <sql comment="综合当日积分发送用户数和积分量">
+	 select FROM_UNIXTIME(inputtime,'%y%m%d') as date,count(distinct a.member_id)as user_num,sum(a.point) as credit_issue from money.member_point_data as a where a.type=1 and a.way=1  group by FROM_UNIXTIME(inputtime,'%y%m%d')
+	 </sql>
+ </col>
+	 
+	 
+	 <col name="积分使用">
+	 
+	  <allsql comment="积分兑换支付宝的用户数和兑换量">
+	  select FROM_UNIXTIME(a.dateline,'%y%m%d'),sum(case b.type when 2 then b.cost else 0 end)as ali_count,sum(case b.type when 2 then count(distinct a.mid) else 0 end)as aliuser_num from money.exchange_order as a inner join money.exchange_item as b on a.item_id=b.id 
+	  </allsql>
+	  <sql comment="积分兑换支付宝的用户数和兑换量">
+	  select FROM_UNIXTIME(a.dateline,'%y%m%d'),sum(b.cost),count(distinct a.mid) from money.exchange_order as a inner join money.exchange_item as b on a.item_id=b.id where b.type=2
+	  </sql>
+	  <sql comment="积分兑换话费的用户数和兑换量">
+	  select FROM_UNIXTIME(a.dateline,'%y%m%d'),sum(b.cost),count(distinct a.mid) from money.exchange_order as a inner join money.exchange_item as b on a.item_id=b.id where b.type=1
+	  </sql>
+	 </col>
+	 
+	 <col name="配平库">
+	 <sql>
+	 
+	  select FROM_UNIXTIME(a.inputtime,'%y%m%d')as date,
+          sum(case a.difftype when 1 then b.point else 0 end) as scheme1,
+          sum(case a.difftype when 2 then b.point else 0 end) as scheme2,
+          sum(case a.difftype when 3 then b.point else 0 end) as scheme3,
+          sum(case a.difftype when 4 then b.point else 0 end) as scheme4,
+          sum(case a.difftype when 5 then b.point else 0 end) as scheme5
+          from money.lottery_data as a inner join money.member_point_data as b on a.trade_id=b.trade_id group by FROM_UNIXTIME(a.inputtime,'%y%m%d')
+	 </sql>
+	 </col>
+	 
+	<alsql>
+	select * from (select FROM_UNIXTIME(inputtime,'%y%m%d') as date,count(distinct a.member_id)as user_num,sum(a.point) as credit_issue from money.member_point_data as a where a.type=1 and a.way=1  group by FROM_UNIXTIME(inputtime,'%y%m%d'))as three
+	left join
+	( select FROM_UNIXTIME(a.inputtime,'%y%m%d')as date,
+          sum(case a.difftype when 1 then b.point else 0 end) as scheme1,
+          sum(case a.difftype when 2 then b.point else 0 end) as scheme2,
+          sum(case a.difftype when 3 then b.point else 0 end) as scheme3,
+          sum(case a.difftype when 4 then b.point else 0 end) as scheme4,
+          sum(case a.difftype when 5 then b.point else 0 end) as scheme5
+          from money.lottery_data as a inner join money.member_point_data as b on a.trade_id=b.trade_id group by FROM_UNIXTIME(a.inputtime,'%y%m%d'))as five on three.date=five.date
+	</alsql>
+	
+	</req>
+	
+	
+<req name="第三方推荐数据" status="ok:time-need to be inserted">
+
+<sql comment="选出所有的软件">
+set @sql0:="select distinct app_name from money.member_app_data"
+</sql>
+
+<allsql>
+select  distinct a.app_name,sum(case a.usetype when 2 then 1 else 0 end) as download_count,
+        sum(case a.usetype when 3 then 1 else 0 end) as autoLaunch,
+        sum(case a.usetype when 4 then 1 else 0 end) as selfLaunch from money.member_app_data as a where a.inputtime>unix_timestamp('20140423') and a.inputtime<unix_timestamp('20140424')group by a.app_name
+</allsql>
+<sql comment="第三方推荐数据" metacomment="depreciated">
+select a.app_name,a.download_count,b.autoLaunch,c.selfLaunch from 
+(select app_name,count(member_app_id)as download_count from money.member_app_data where usetype=4 group by app_name)as a
+left join
+(select app_name,count(member_app_id)as autoLaunch from money.member_app_data where usetype=3 group by app_name)as b on a.app_name=b.app_name
+left join
+(select app_name,count(member_app_id)as selfLaunch from money.member_app_data where usetype=2 group by app_name)as c on b.app_name=c.app_name
+</sql>
+
+</req>
+	
+	
+	
+	
+	<req name="用户体验">
+<sql comment="用户体验数据">
+<comment>行转列适用于每一个列都是由相同的数据库获得的情况，每个列的获取都是相同的sql语句，该了一个参数而已</comment>
+select 
+date,
+sum(case function when 1002 then use_count else 0 end) AS shishouqi_total_click,
+sum(case function when 1002 then user_num else 0 end) AS shishouqi_total_usr_num,
+sum(case function when 1002 then use_count else 0 end)/sum(case function when 1002 then user_num else 0 end)as shishouqi_ratio
+from(select sum(a.times)as use_count,count(distinct member_id) as user_num,module,function,date from (select times,member_id ,module,function,DATE_FORMAT(stampdate, '%y%m%d')as date from money.hotspot)as a group by a.date,a.module,a.function)as a
+</sql>
+</req>	
+	

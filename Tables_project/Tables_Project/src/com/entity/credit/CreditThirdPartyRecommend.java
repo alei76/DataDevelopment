@@ -14,6 +14,8 @@ public class CreditThirdPartyRecommend {
 	//1安装 2第三方第应用打开（用户主动打开） 3第三方应用安装（自动打开） 4第三方应用下载',
 	
 	
+	String sql="";
+	
 	public int getDate() {
 		return date;
 	}
