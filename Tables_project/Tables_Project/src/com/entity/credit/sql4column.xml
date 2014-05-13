@@ -1,6 +1,79 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<root>
+<method comment="创建view的方法">
+create view test_view as 
+select * from member_app_data
+select * from test_view
+</method>
+<bash>
+#!/bin/sh
+
+DIR="/usr/wwwroot/7654/Plugins/DatePie/"
+DATE=$(date +%Y%m%d --date '1 days ago')
+HOST=10.161.148.196
+USER=developer
+PASSWD=DN3v74JB
+DATABASE=statistics
+FILE=result.txt
+
+cd ${DIR}
+
+echo "the date:"${DATE}
+
+SQL="exec mysql -h${HOST} -u${USER} -p${PASSWD} -D ${DATABASE} --default-character-set=utf8 -e \"ysqd_collect_all_start_end(${DATE})\""
+echo ${SQL}>>${FILE}
+
+if   mysql -h${HOST} \
+           -u${USER} \
+           -p${PASSWD} \
+           -D ${DATABASE} \
+           --default-character-set=utf8 \
+           -e "call ysqd_collect_all_start_end(${DATE})"; then
+    echo "ok">>${FILE}
+else
+    echo "fail">>${FILE}
+fi
+
+exit;
+
+</bash>
+
+<procedure>
+CREATE PROCEDURE `procedureDemo`(in todaydate INTEGER)
+BEGIN
+set @dateline:=todaydate;
+SET @sql_stat:=CONCAT("
+select
+  softName,max(userEffNum) as userEffNum, max(ymd) as ymd, max(credit) as credit, max(userAllNum) as userAllNum, max(absolutelyNum) as absolutelyNum,max(onlyNum) as onlyNum,max(installEffNum) as installEffNum
+from
+(
+  select ymd, count(distinct uid) as userEffNum, sum(credit) as credit, sum(ip_count) as installEffNum,0 as userAllNum,0 as onlyNum,0 as absolutelyNum,name as softName from union.credit_wait_confirm where type = 2 and ymd = ",@dateline," group by name,ymd
+  union all
+  select ",@dateline," as ymd,0 as userEffNum, 0 as credit, 0 as installEffNum,count(distinct uid) as userAllNum, count(distinct pc_id) as onlyNum ,0 as absolutelyNum,software_id as softName from union.promotion_install where dateline = ",@dateline," group by software_id
+  union all
+  select ",@dateline," as ymd,0 as userEffNum, 0 as credit , 0 as installEffNum , 0 as userAllNum , 0 as onlyNum ,count(uid) as absolutelyNum,SoftID as softName from zj7654_log.install",@dateline," as dd group by SoftID
+) a group by softName");
+
+PREPARE stmt1 FROM @sql_stat;
+EXECUTE stmt1 ;
+END
+
+</procedure>
 
 <req name="基础数据：参与表lottery_data,member_app_data,member----问题是查询出的结果的每一列不相同" status="concate sql logic right">
+<table>
+CREATE TABLE `credit_basic` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `date` int(10) unsigned DEFAULT NULL COMMENT '时间',
+  `qid` int(10) unsigned DEFAULT NULL COMMENT '渠道',
+  `launch_count` int(10) unsigned DEFAULT NULL COMMENT '服务启动量',
+  `active_count` int(10) unsigned DEFAULT NULL COMMENT '活跃数',
+  `download_count` int(10) unsigned DEFAULT NULL COMMENT '下载数',
+  `third_count` int(10) unsigned DEFAULT NULL COMMENT '打开第三方应用'
+  PRIMARY KEY (`id`),
+) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='赚金币基础数据表'
+
+</table>
 <sql comment="选出所有的渠道">
 set @sql0:="select distinct b.qid from money.member as b"
 </sql>
@@ -23,16 +96,121 @@ set @sql4:="select b.qid,count(distinct a.member_id)as third_count from (money.m
 <python comment="用python将语句用comma分割开来">
 select z.qid,a.launch_count,b.active_count,c.download_count,d.third_count from (@sql0)as z left join (@sql1)as a on z.qid=a.qid left join (@sql2)as b on a.qid=b.qid left join (@sql3)as c on b.qid=c.qid left join (@sql4) as d on c.qid=d.qid
 </python>
+
 <allsql comment="根据渠道来拼接">
-set @inter6:=concat("select z.qid,a.launch_count,b.active_count,c.download_count,d.third_count from  (", @sql0 ,") as z left join  (", @sql1 ,") as a on z.qid=a.qid left join  (", @sql2 ,") as b on a.qid=b.qid left join  (", @sql3 ,") as c on b.qid=c.qid left join  (", @sql4 ,")  as d on c.qid=d.qid")
-prepare stmt from @inter6
-execute stmt
 </allsql>
 
+
+
+<procedure>
+drop procedure CreditBasic 
+CREATE PROCEDURE `CreditBasic`(in todaydate INTEGER,tommorrow INTEGER)
+BEGIN
+set @inputDate:=todaydate;
+set @toDate:=tommorrow;
+set @sql4date:=concat("a.inputtime>unix_timestamp('",@inputDate,"') and a.inputtime<unix_timestamp('",@toDate,"')");
+set @sql0:="select distinct b.qid from money.member as b";
+set @sql1:=concat("select b.qid as qid,count(distinct a.member_id)as launch_count from lottery_data as a right join money.member as b on a.member_id=b.id where ",@sql4date);
+set @sql2:=concat("select b.qid,count(distinct a.member_id)as active_count from (money.member_app_data as a left join money.member as b on a.member_id=b.id) where ",@sql4date," group by b.qid");
+set @sql3:=concat("select b.qid,count(distinct a.member_id)as download_count from (money.member_app_data as a left join money.member as b on a.member_id=b.id) where a.usetype=4 and ",@sql4date," group by b.qid");
+set @sql4:=concat("select b.qid,count(distinct a.member_id)as third_count from (money.member_app_data as a left join money.member as b on a.member_id=b.id) where a.usetype=2 and ",@sql4date," group by b.qid");
+set @inter6:=concat("select ",@inputDate,",z.qid,a.launch_count,b.active_count,c.download_count,d.third_count from  (", @sql0 ,") as z left join  (", @sql1 ,") as a on z.qid=a.qid left join  (", @sql2 ,") as b on a.qid=b.qid left join  (", @sql3 ,") as c on b.qid=c.qid left join  (", @sql4 ,")  as d on c.qid=d.qid");
+set @inter7:=concat("insert credit_basic(date,qid,launch_count,active_count,download_count,third_count)",@inter6)
+prepare stmt from @inter6;
+execute stmt;
+END
+call CreditBasic(20140304,20140305)
+</procedure>
 </req>
 
 
 <req name="新用户数据，member表里有注册时间这个字段，选择当天即可以选择新用户" status="concate logic ok">
+
+<view>
+create view view_credit_new_user as select a.date,a.qid,a.install_count,a.active_count,a.download_count,b.nextDay_active_count,b.nextDay_active_count/a.active_count,b.week_active_count,b.week_active_count/a.active_count,b.month_active_count,b.month_active_count/a.active_count from credit_new_user_left as a left join credit_new_user_right as b on a.date=b.date and a.qid=b.qid 
+</view>
+<sql comment="future 数据">
+select b.date,b.active_count,a.qid,a.nextDayActivecount,a.weekactivecount,a.monthactivecount from (select  a.date,a.qid,sum(case a.activetype when 10000 then 1 else 0 end)as nextDayActiveCount,sum(case a.activetype when 10001 then 1 else 0 end)as weekActiveCount,sum(case a.activetype when 10002 then 1 else 0 end)as MonthActiveCount from money.credit_future as a group by a.date,a.qid order by a.date)as a right join (select b.qid,from_unixtime(a.inputtime,'%Y%m%d')as date,count(distinct a.member_id)as active_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where b.reg_date>unix_timestamp('20140323') and b.reg_date<unix_timestamp('20140512') group by b.qid)as b on a.date=b.date group by a.qid
+</sql>
+<examplesql comment="在今天计算昨天，七天前和三十天前的数据，得到历史日期对应的今天的活跃数">
+<comment="通过对用户id的join来得到">
+select from_unixtime(20140501,'%Y%m%d')as date,b.qid,10000,count(distinct a.member_id)as nextDay_active_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where b.reg_date>unix_timestamp(20140430) and b.reg_date<unix_timestamp(20140430)+86400 and a.inputtime>=unix_timestamp(20140501) and a.inputtime<unix_timestamp(20140501)+86400 group by b.qid;
+</examplesql>
+
+<examplesql comment="比例">
+select a.active_count/() from (select a.active_count from credit_future as a)as a
+</examplesql>
+
+
+
+
+
+<exampleprocedure >
+set @sql4="select b.date as date,b.active_count,a.qid,a.nextDayActivecount,a.weekactivecount,a.monthactivecount from (select  a.date,a.qid,sum(case a.activetype when 10000 then 1 else 0 end)as nextDayActiveCount,sum(case a.activetype when 10001 then 1 else 0 end)as weekActiveCount,sum(case a.activetype when 10002 then 1 else 0 end)as MonthActiveCount from money.credit_future as a group by a.date,a.qid order by a.date)as a right join (select b.qid,from_unixtime(a.inputtime,'%Y%m%d')as date,count(distinct a.member_id)as active_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where b.reg_date>unix_timestamp('20140323') and b.reg_date<unix_timestamp('20140512') group by b.qid)as b on a.date=b.date group by a.qid";
+set @sql:=concat("select 20140224,a.qid,a.active_count,a.install_count,a.download_count,b.nextDayActivecount,b.weekactivecount,b.monthactivecount from (",@inter,")as a left join (",@sql4,")as b on a.qid=b.qid")
+PROCEDURE money.CreditNewUserLeft(IN indate INTEGER(10),toDate INTEGER(10)) 
+BEGIN
+set @todayDate:=indate;
+set @todayDate=20140505
+set @sql0:="select distinct b.qid from money.member as b"
+set @sql1="select distinct a.qid,count(distinct id)as install_count from money.member as a where a.reg_date>unix_timestamp('today') and a.reg_date<unix_timestamp('toDate')  group by a.qid"
+set @sql2="select b.qid,count(distinct a.member_id)as active_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where b.reg_date>unix_timestamp('TODAY') and b.reg_date<unix_timestamp('ENDDATE') group by b.qid"
+set @sql3="select b.qid,count(distinct a.member_id)as download_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where a.usetype=4 and b.reg_date>unix_timestamp('BEGINDATE') and b.reg_date<unix_timestamp('ENDDATE') group by b.qid"
+set @inter:=concat("select ",@todayDate," as date, z.qid,a.install_count,b.active_count,c.download_count  from  (", @sql0 ,")as z right join  (", @sql1 ,")as a on z.qid=a.qid left join  (", @sql2 ,")as b on a.qid=b.qid left join  (", @sql3 ,")as c on b.qid=c.qid")
+prepare stmt from @inter
+execute stmt
+</exampleprocedure>
+
+
+
+
+
+
+<procedure comment="在今天计算昨天，七天前和三十天前的数据，得到历史日期对应的今天的活跃数">
+PROCEDURE money.Creditfuture (IN indate INTEGER(10))
+BEGIN
+set @todayDate:=indate;
+set @today:=unix_timestamp(@todayDate);
+set @prevMonth:=unix_timestamp(@todayDate)-86400*30;
+set @prevWeek:=unix_timestamp(@todayDate)-86400*7;
+set @prevDay:=unix_timestamp(@todayDate)-86400;
+set @sqlday=concat("insert credit_future(date,qid,activetype,active_count) select from_unixtime(",@prevDay,",'%Y%m%d')as date,b.qid,10000,count(distinct a.member_id)as nextDay_active_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where b.reg_date>@prevDay and b.reg_date<",@prevDay,"+86400 and a.inputtime>=",@today," and a.inputtime<",@today,"+86400 group by b.qid;");
+set @sqlweek=concat("insert credit_future(date,qid,activetype,active_count) select from_unixtime(",@prevWeek,",'%Y%m%d')as date,b.qid,10001,count(distinct a.member_id)as nextDay_active_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where b.reg_date>@prevDay and b.reg_date<",@prevDay,"+86400 and a.inputtime>=",@today," and a.inputtime<",@today,"+86400 group by b.qid;");
+set @sqlmonth=concat("insert credit_future(date,qid,activetype,active_count) select from_unixtime(",@prevMonth,",'%Y%m%d')as date,b.qid,10002,count(distinct a.member_id)as nextDay_active_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where b.reg_date>@prevDay and b.reg_date<",@prevDay,"+86400 and a.inputtime>=",@today," and a.inputtime<",@today,"+86400 group by b.qid;");
+set @sql=concat(@sqlday,@sqlweek,@sqlmonth);
+prepare stmt1 from @sqlday;
+execute stmt1;
+prepare stmt2 from @sqlweek;
+execute stmt2;
+prepare stmt3 from @sqlmonth;
+execute stmt3;
+END
+</procedure>
+
+<sql comment="从future表里选出次日，七日和30日用户数据">
+create view test_view4newuser as 
+select a.date,a.qid,sum(case a.activetype when 10000 then 1 else 0 end)as nextDayActiveCount,sum(case a.activetype when 10001 then 1 else 0 end)as weekActiveCount,sum(case a.activetype when 10002 then 1 else 0 end)as MonthActiveCount from money.credit_future as a group by a.date,a.qid order by a.date
+</sql>
+
+<table>
+
+
+CREATE TABLE `credit_new_user` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `date` int(10) unsigned DEFAULT NULL COMMENT '时间',
+  `qid` varchar(10) DEFAULT NULL COMMENT '渠道',
+  `install_count` int(10) unsigned DEFAULT NULL COMMENT '安装数',
+  `active_count` int(10) unsigned DEFAULT NULL COMMENT '活跃数',
+  `download_count` int(10) unsigned DEFAULT NULL COMMENT '下载数',
+  `nextDay_active_count` int(10) unsigned DEFAULT NULL COMMENT '次日活跃数',
+  `nextDay_active_rate` int(10) unsigned DEFAULT NULL COMMENT '次日活跃率',
+  `week_active_count` int(10) unsigned DEFAULT NULL COMMENT '七日活跃数',
+  `week_active_rate` int(10) unsigned DEFAULT NULL COMMENT '七日活跃率',
+  `month_active_count` int(10) unsigned DEFAULT NULL COMMENT '三十日活跃数',
+  `month_active_rate` int(10) unsigned DEFAULT NULL COMMENT '三十日活跃率',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=17 DEFAULT CHARSET=utf8 COMMENT='赚金币新用户数据表'</table>
+
 
 <sql comment="选出所有的渠道">
 set @sql0:="select distinct b.qid from money.member as b"
@@ -50,16 +228,56 @@ set @sql3="select b.qid,count(distinct a.member_id)as download_count from (money
 </sql>
 <python>select * from (@sql0)as z left join (@sql1)as a on z.qid=a.qid left join (@sql2)as b on a.qid=b.qid left join (@sql3)as c on b.qid=c.qid</python>
 <allsql>
+set @sql0:="select distinct b.qid from money.member as b"
+set @sql1="select distinct a.qid,count(distinct id)as install_count from money.member as a where a.reg_date>unix_timestamp('20140423') and a.reg_date<unix_timestamp('20140429')  group by a.qid"
+set @sql2="select b.qid,count(distinct a.member_id)as active_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where b.reg_date>unix_timestamp('20140423') and b.reg_date<unix_timestamp('20140424') group by b.qid"
+set @sql3="select b.qid,count(distinct a.member_id)as download_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where a.usetype=4 and b.reg_date>unix_timestamp('20140423') and b.reg_date<unix_timestamp('20140424') group by b.qid"
+
 set @inter:=concat("select * from  (", @sql0 ,")as z left join  (", @sql1 ,")as a on z.qid=a.qid left join  (", @sql2 ,")as b on a.qid=b.qid left join  (", @sql3 ,")as c on b.qid=c.qid")
 prepare stmt from @inter
 execute stmt
 </allsql>
+
+
+
+<procedure>
+drop procedure CreditNewUser 
+CREATE PROCEDURE `CreditNewUser`(in todaydate INTEGER,tommorrow INTEGER)
+BEGIN
+set @inputDate:=todaydate;
+set @toDate:=tommorrow;
+set @sql0:="select distinct b.qid from money.member as b";
+set @sql1=concat("select distinct a.qid,count(distinct id)as install_count from money.member as a where a.reg_date>unix_timestamp('",@inputDate,"') and a.reg_date<unix_timestamp('",@toDate,"')  group by a.qid");
+set @sql2=concat("select b.qid,count(distinct a.member_id)as active_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where b.reg_date>unix_timestamp('",@inputDate,"') and b.reg_date<unix_timestamp('",@toDate,"') group by b.qid");
+set @sql3=concat("select b.qid,count(distinct a.member_id)as download_count from (money.member_app_data as a right join money.member as b on a.member_id=b.id) where a.usetype=4 and b.reg_date>unix_timestamp('",@inputDate,"') and b.reg_date<unix_timestamp('",@toDate,"') group by b.qid");
+set @inter:=concat("select * from  (", @sql0 ,")as z left join  (", @sql1 ,")as a on z.qid=a.qid left join  (", @sql2 ,")as b on a.qid=b.qid left join  (", @sql3 ,")as c on b.qid=c.qid");
+prepare stmt from @inter;
+execute stmt;
+END
+call creditNewUser(20140423,20140424)
+</procedure>
 </req>
 	
 
 	
 
 <req name="transaction" status="ok">
+
+<alsql>
+
+select * from
+(
+(select FROM_UNIXTIME(inputtime,'%y%m%d') as date,count(a.member_id)as raffle_count,count(distinct a.member_id)as raffle_user_num from money.lottery_data as a where a.type=1 group by FROM_UNIXTIME(inputtime,'%y%m%d'))as a
+left join
+(select FROM_UNIXTIME(inputtime,'%y%m%d') as date,count(distinct a.member_id)as issue_user_num,sum(a.point) as credit_issue from money.member_point_data as a where a.type=1 and a.way=1  group by FROM_UNIXTIME(inputtime,'%y%m%d'))as b on a.date=b.date
+left join
+(select FROM_UNIXTIME(a.dateline,'%y%m%d')as date,sum(case b.type when 2 then b.cost else 0 end)as ali_point_count,count(distinct(case b.type when 2 then a.mid else 0 end))as aliuser_num,sum(case b.type when 1 then b.cost else 0 end)as cell_point_count,count(distinct (case b.type when 1 then a.mid else 0 end))as cell_user_num from money.exchange_order as a inner join money.exchange_item as b on a.item_id=b.id)as c on b.date=c.date
+)
+
+
+
+</alsql>
+
 <col>
 	 <sql comment="当日抽奖总次数:只计算次数不需要去重">
      	select FROM_UNIXTIME(inputtime,'%y%m%d') as date,count(a.member_id)as raffle_count,count(distinct a.member_id)as raffle_user_num from money.lottery_data as a where a.type=1 group by FROM_UNIXTIME(inputtime,'%y%m%d')
@@ -76,9 +294,13 @@ execute stmt
 	 
 	 <col name="积分使用">
 	 
-	  <allsql comment="积分兑换支付宝的用户数和兑换量">
-	  select FROM_UNIXTIME(a.dateline,'%y%m%d'),sum(case b.type when 2 then b.cost else 0 end)as ali_count,sum(case b.type when 2 then count(distinct a.mid) else 0 end)as aliuser_num from money.exchange_order as a inner join money.exchange_item as b on a.item_id=b.id 
+	  <allsql comment="把各个sql合并在一起">
+	  select FROM_UNIXTIME(a.dateline,'%y%m%d'),sum(case b.type when 2 then b.cost else 0 end)as ali_point_count,sum(case b.type when 2 then count(distinct a.mid) else 0 end)as aliuser_num,sum(case b.type when 1 then b.cost else 0 end)as cell_point_count,sum(case b.type when 1 then count(distinct a.mid) else 0 end)as cell_user_num from money.exchange_order as a inner join money.exchange_item as b on a.item_id=b.id 
 	  </allsql>
+	  
+	  
+	  
+	  
 	  <sql comment="积分兑换支付宝的用户数和兑换量">
 	  select FROM_UNIXTIME(a.dateline,'%y%m%d'),sum(b.cost),count(distinct a.mid) from money.exchange_order as a inner join money.exchange_item as b on a.item_id=b.id where b.type=2
 	  </sql>
@@ -86,6 +308,10 @@ execute stmt
 	  select FROM_UNIXTIME(a.dateline,'%y%m%d'),sum(b.cost),count(distinct a.mid) from money.exchange_order as a inner join money.exchange_item as b on a.item_id=b.id where b.type=1
 	  </sql>
 	 </col>
+	 
+	 <sql comment="充话费和充支付宝，一共4条">
+	    select FROM_UNIXTIME(a.dateline,'%y%m%d'),sum(case b.type when 2 then b.cost else 0 end)as ali_point_count,count(distinct(case b.type when 2 then a.mid else 0 end))as aliuser_num,sum(case b.type when 1 then b.cost else 0 end)as cell_point_count,count(distinct (case b.type when 1 then a.mid else 0 end))as cell_user_num from money.exchange_order as a inner join money.exchange_item as b on a.item_id=b.id
+	 </sql>
 	 
 	 <col name="配平库">
 	 <sql>
@@ -101,7 +327,7 @@ execute stmt
 	 </col>
 	 
 	<alsql>
-	select * from (select FROM_UNIXTIME(inputtime,'%y%m%d') as date,count(distinct a.member_id)as user_num,sum(a.point) as credit_issue from money.member_point_data as a where a.type=1 and a.way=1  group by FROM_UNIXTIME(inputtime,'%y%m%d'))as three
+	select * from (select FROM_UNIXTIME(inputtime,'%y%m%d') as date,count(a.member_id)as raffle_num,count(distinct a.member_id)as user_num,sum(a.point) as credit_issue from money.member_point_data as a where a.type=1 and a.way=1  group by FROM_UNIXTIME(inputtime,'%y%m%d'))as three
 	left join
 	( select FROM_UNIXTIME(a.inputtime,'%y%m%d')as date,
           sum(case a.difftype when 1 then b.point else 0 end) as scheme1,
@@ -111,6 +337,50 @@ execute stmt
           sum(case a.difftype when 5 then b.point else 0 end) as scheme5
           from money.lottery_data as a inner join money.member_point_data as b on a.trade_id=b.trade_id group by FROM_UNIXTIME(a.inputtime,'%y%m%d'))as five on three.date=five.date
 	</alsql>
+	<table>
+	
+CREATE TABLE `credit_transaction` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `date` int(10) unsigned DEFAULT NULL COMMENT '时间',
+  `raffle_user_num` int(10) unsigned DEFAULT NULL COMMENT '抽奖总用户数',
+  `raffle_count` int(10) unsigned DEFAULT NULL COMMENT '抽奖总次数', 
+  `credit_user_num` int(10) unsigned DEFAULT NULL COMMENT '积分发放用户数',
+  `credit_issue` int(10) unsigned DEFAULT NULL COMMENT '积分发放量',
+  `ali_usernum` int(10) unsigned DEFAULT NULL COMMENT '积分兑换支付宝的用户数',
+  `ali_point` int(10) unsigned DEFAULT NULL COMMENT '积分兑换支付宝的数量',
+  `exchange_cell_usernum` int(10) unsigned DEFAULT NULL COMMENT '积分兑换话费用户数',
+  `exchange_cell_point_count` int(10) unsigned DEFAULT NULL COMMENT '积分兑换话费量',
+  `scheme1` int(10) unsigned DEFAULT NULL COMMENT '方案1',
+  `scheme2` int(10) unsigned DEFAULT NULL COMMENT '方案2',
+  `scheme3` int(10) unsigned DEFAULT NULL COMMENT '方案3',
+  `scheme4` int(10) unsigned DEFAULT NULL COMMENT '方案4',
+  `scheme5` int(10) unsigned DEFAULT NULL COMMENT '方案5',
+  PRIMARY KEY (`id`),
+) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='赚金币兑换数据表'
+
+</table>
+	<procedure>
+	
+	    drop procedure CreditTransaction
+CREATE PROCEDURE `CreditTransaction`(in todaydate INTEGER)
+BEGIN
+set @inputDate:=todaydate;    
+
+set @inter6:=concat("select * from (select FROM_UNIXTIME(inputtime,'%y%m%d') as date,count(a.member_id)as raffle_num,count(distinct a.member_id)as user_num,sum(a.point) as credit_issue from money.member_point_data as a where a.type=1 and a.way=1  group by FROM_UNIXTIME(inputtime,'%y%m%d'))as three
+	left join
+	( select FROM_UNIXTIME(a.inputtime,'%y%m%d')as date,
+          sum(case a.difftype when 1 then b.point else 0 end) as scheme1,
+          sum(case a.difftype when 2 then b.point else 0 end) as scheme2,
+          sum(case a.difftype when 3 then b.point else 0 end) as scheme3,
+          sum(case a.difftype when 4 then b.point else 0 end) as scheme4,
+          sum(case a.difftype when 5 then b.point else 0 end) as scheme5
+          from money.lottery_data as a inner join money.member_point_data as b on a.trade_id=b.trade_id group by FROM_UNIXTIME(a.inputtime,'%y%m%d'))as five on three.date=five.date where five.date=",@inputDate);
+
+prepare stmt from @inter6;
+execute stmt;
+END
+call creditTransaction(140428)
+	</procedure>
 	
 	</req>
 	
@@ -135,20 +405,210 @@ left join
 (select app_name,count(member_app_id)as selfLaunch from money.member_app_data where usetype=2 group by app_name)as c on b.app_name=c.app_name
 </sql>
 
+
+CREATE TABLE `credit_third` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `date` int(10) unsigned DEFAULT NULL COMMENT '时间',
+  `software_name` int(10) unsigned DEFAULT NULL COMMENT '软件名称',
+  `download_count` int(10) unsigned DEFAULT NULL COMMENT '下载次数', 
+  `auto_launch_num` int(10) unsigned DEFAULT NULL COMMENT '安装后自动打开次数',
+  `self_launch_count` int(10) unsigned DEFAULT NULL COMMENT '用户主动打开次数',
+  PRIMARY KEY (`id`),
+) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='赚金币三方应用数据表'
+
+
+<procedure status="ok">
+drop procedure creditThird
+CREATE PROCEDURE `CreditThird`(in todaydate INTEGER,tommorrow INTEGER)
+BEGIN
+set @inputDate:=todaydate;
+set @toDate:=tommorrow;
+set @inter6:=concat("insert credit_third(date,software_name,download_count,auto_launch_num,self_launch_count)
+select ",@inputDate,",a.app_name,sum(case a.usetype when 2 then 1 else 0 end) as download_count,
+        sum(case a.usetype when 3 then 1 else 0 end) as autoLaunch,
+        sum(case a.usetype when 4 then 1 else 0 end) as selfLaunch from money.member_app_data as a where a.inputtime>unix_timestamp('",@inputDate,"') and a.inputtime<unix_timestamp('",@toDate,"')group by a.app_name
+ ");
+prepare stmt from @inter6; 
+execute stmt;
+END
+call creditThrid(20140428,20140429)
+</procedure>
 </req>
 	
 	
 	
 	
-	<req name="用户体验">
+<req name="用户体验" status="right but need augmentation">
 <sql comment="用户体验数据">
 <comment>行转列适用于每一个列都是由相同的数据库获得的情况，每个列的获取都是相同的sql语句，该了一个参数而已</comment>
-select 
-date,
-sum(case function when 1002 then use_count else 0 end) AS shishouqi_total_click,
-sum(case function when 1002 then user_num else 0 end) AS shishouqi_total_usr_num,
-sum(case function when 1002 then use_count else 0 end)/sum(case function when 1002 then user_num else 0 end)as shishouqi_ratio
-from(select sum(a.times)as use_count,count(distinct member_id) as user_num,module,function,date from (select times,member_id ,module,function,DATE_FORMAT(stampdate, '%y%m%d')as date from money.hotspot)as a group by a.date,a.module,a.function)as a
+select date,sum(case function when 1001 then use_count else 0 end)as 1001_total_click,sum(case function when 1001 then user_num else 0 end)as 1001_total_usr_num,(sum(case function when 1001 then use_count else 0 end)/sum(case function when 1001 then user_num else 0 end) )as 1001_ratio
+    from(
+    select sum(a.times)as use_count,count(distinct member_id) as user_num,module,function,date 
+    from (select times,member_id ,module,function,DATE_FORMAT(stampdate, '%y%m%d')as date from money.hotspot)as a group by a.date,a.module,a.function)as a
 </sql>
-</req>	
-	
+
+<sql comment="ok">
+select date,sum(case function when 1001 then use_count else 0 end) AS 1001_total_click,
+sum(case function when 1001 then user_num else 0 end)as 1001_total_usr_num,
+(sum(case function when 1001 then use_count else 0 end)/sum(case function when 1001 then user_num else 0 end) )as 1001_ratio,
+sum(case function when 1002 then use_count else 0 end) AS 1002_total_click,
+sum(case function when 1002 then user_num else 0 end)as 1002_total_usr_num,
+(sum(case function when 1002 then use_count else 0 end)/sum(case function when 1002 then user_num else 0 end) )as 1002_ratio,
+sum(case function when 1003 then use_count else 0 end) AS 1003_total_click,
+sum(case function when 1003 then user_num else 0 end)as 1003_total_usr_num,
+(sum(case function when 1003 then use_count else 0 end)/sum(case function when 1003 then user_num else 0 end) )as 1003_ratio,
+sum(case function when 1004 then use_count else 0 end) AS 1004_total_click,
+sum(case function when 1004 then user_num else 0 end)as 1004_total_usr_num,
+(sum(case function when 1004 then use_count else 0 end)/sum(case function when 1004 then user_num else 0 end) )as 1004_ratio,
+sum(case function when 1005 then use_count else 0 end) AS 1005_total_click,
+sum(case function when 1005 then user_num else 0 end)as 1005_total_usr_num,
+(sum(case function when 1005 then use_count else 0 end)/sum(case function when 1005 then user_num else 0 end) )as 1005_ratio,
+sum(case function when 1006 then use_count else 0 end) AS 1006_total_click,
+sum(case function when 1006 then user_num else 0 end)as 1006_total_usr_num,
+(sum(case function when 1006 then use_count else 0 end)/sum(case function when 1006 then user_num else 0 end) )as 1006_ratio,
+sum(case function when 1007 then use_count else 0 end) AS 1007_total_click,
+sum(case function when 1007 then user_num else 0 end)as 1007_total_usr_num,
+(sum(case function when 1007 then use_count else 0 end)/sum(case function when 1007 then user_num else 0 end) )as 1007_ratio
+    from(
+    select sum(a.times)as use_count,count(distinct member_id) as user_num,module,function,date 
+    from (select times,member_id ,module,function,DATE_FORMAT(stampdate, '%y%m%d')as date from money.hotspot)as a group by a.date,a.module,a.function)as a group by a.date
+    
+</sql>
+<procedure>
+drop procedure Experience
+CREATE PROCEDURE `CreditExperienceOne`(in todaydate INTEGER)
+BEGIN
+set @inputDate:=todaydate;
+set @inter6:=concat("select date,sum(case function when 1001 then use_count else 0 end) AS 1001_total_click,
+sum(case function when 1001 then user_num else 0 end)as 1001_total_usr_num,
+(sum(case function when 1001 then use_count else 0 end)/sum(case function when 1001 then user_num else 0 end) )as 1001_ratio,
+sum(case function when 1002 then use_count else 0 end) AS 1002_total_click,
+sum(case function when 1002 then user_num else 0 end)as 1002_total_usr_num,
+(sum(case function when 1002 then use_count else 0 end)/sum(case function when 1002 then user_num else 0 end) )as 1002_ratio,
+sum(case function when 1003 then use_count else 0 end) AS 1003_total_click,
+sum(case function when 1003 then user_num else 0 end)as 1003_total_usr_num,
+(sum(case function when 1003 then use_count else 0 end)/sum(case function when 1003 then user_num else 0 end) )as 1003_ratio,
+sum(case function when 1004 then use_count else 0 end) AS 1004_total_click,
+sum(case function when 1004 then user_num else 0 end)as 1004_total_usr_num,
+(sum(case function when 1004 then use_count else 0 end)/sum(case function when 1004 then user_num else 0 end) )as 1004_ratio,
+sum(case function when 1005 then use_count else 0 end) AS 1005_total_click,
+sum(case function when 1005 then user_num else 0 end)as 1005_total_usr_num,
+(sum(case function when 1005 then use_count else 0 end)/sum(case function when 1005 then user_num else 0 end) )as 1005_ratio,
+sum(case function when 1006 then use_count else 0 end) AS 1006_total_click,
+sum(case function when 1006 then user_num else 0 end)as 1006_total_usr_num,
+(sum(case function when 1006 then use_count else 0 end)/sum(case function when 1006 then user_num else 0 end) )as 1006_ratio,
+sum(case function when 1007 then use_count else 0 end) AS 1007_total_click,
+sum(case function when 1007 then user_num else 0 end)as 1007_total_usr_num,
+(sum(case function when 1007 then use_count else 0 end)/sum(case function when 1007 then user_num else 0 end) )as 1007_ratio
+    from(
+    select sum(a.times)as use_count,count(distinct member_id) as user_num,module,function,date 
+    from (select times,member_id ,module,function,DATE_FORMAT(stampdate, '%y%m%d')as date from money.hotspot)as a group by a.date,a.module,a.function)as a where a.date=",@inputdate);
+
+prepare stmt from @inter6;
+execute stmt;
+END
+call creditExperienceOne(140428)
+</procedure>
+<sql>
+select date,
+sum(case function when 11001 then use_count else 0 end) AS 11001_total_click,
+sum(case function when 11001 then user_num else 0 end)as 11001_total_usr_num,
+(sum(case function when 11001 then use_count else 0 end)/sum(case function when 11001 then user_num else 0 end) )as 11001_ratio,
+sum(case function when 11002 then use_count else 0 end) AS 11002_total_click,
+sum(case function when 11002 then user_num else 0 end)as 11002_total_usr_num,
+(sum(case function when 11002 then use_count else 0 end)/sum(case function when 11002 then user_num else 0 end) )as 11002_ratio,
+sum(case function when 11003 then use_count else 0 end) AS 11003_total_click,
+sum(case function when 11003 then user_num else 0 end)as 11003_total_usr_num,
+(sum(case function when 11003 then use_count else 0 end)/sum(case function when 11003 then user_num else 0 end) )as 11003_ratio,
+sum(case function when 11004 then use_count else 0 end) AS 11004_total_click,
+sum(case function when 11004 then user_num else 0 end)as 11004_total_usr_num,
+(sum(case function when 11004 then use_count else 0 end)/sum(case function when 11004 then user_num else 0 end) )as 11004_ratio,
+sum(case function when 11005 then use_count else 0 end) AS 11005_total_click,
+sum(case function when 11005 then user_num else 0 end)as 11005_total_usr_num,
+(sum(case function when 11005 then use_count else 0 end)/sum(case function when 11005 then user_num else 0 end) )as 11005_ratio,
+sum(case function when 11006 then use_count else 0 end) AS 11006_total_click,
+sum(case function when 11006 then user_num else 0 end)as 11006_total_usr_num,
+(sum(case function when 11006 then use_count else 0 end)/sum(case function when 11006 then user_num else 0 end) )as 11006_ratio
+from(select sum(a.times)as use_count,count(distinct member_id) as user_num,module,function,date 
+from (select times,member_id ,module,function,DATE_FORMAT(stampdate, '%y%m%d')as date from money.hotspot)as a group by a.date,a.module,a.function)as a
+</sql>
+<comment>
+(select times,member_id ,module,function,DATE_FORMAT(stampdate, '%y%m%d')as date from money.hotspot)as a group by a.date,a.module,a.function)as tb_name 将原先的hotspot表做了一个变换
+</comment>
+
+
+
+
+
+
+
+<sql>
+select date,
+sum(case function when 12001 then use_count else 0 end) AS 12001_total_click,
+sum(case function when 12001 then user_num else 0 end)as 12001_total_usr_num,
+(sum(case function when 12001 then use_count else 0 end)/sum(case function when 12001 then user_num else 0 end) )as 12001_ratio,
+sum(case function when 12002 then use_count else 0 end) AS 12002_total_click,
+sum(case function when 12002 then user_num else 0 end)as 12002_total_usr_num,
+(sum(case function when 12002 then use_count else 0 end)/sum(case function when 12002 then user_num else 0 end) )as 12002_ratio,
+sum(case function when 12003 then use_count else 0 end) AS 12003_total_click,
+sum(case function when 12003 then user_num else 0 end)as 12003_total_usr_num,
+(sum(case function when 12003 then use_count else 0 end)/sum(case function when 12003 then user_num else 0 end) )as 12003_ratio,
+sum(case function when 12004 then use_count else 0 end) AS 12004_total_click,
+sum(case function when 12004 then user_num else 0 end)as 12004_total_usr_num,
+(sum(case function when 12004 then use_count else 0 end)/sum(case function when 12004 then user_num else 0 end) )as 12004_ratio,
+sum(case function when 13001 then use_count else 0 end) AS 13001_total_click,
+sum(case function when 13001 then user_num else 0 end)as 13001_total_usr_num,
+(sum(case function when 13001 then use_count else 0 end)/sum(case function when 13001 then user_num else 0 end) )as 13001_ratio,
+sum(case function when 13002 then use_count else 0 end) AS 13002_total_click,
+sum(case function when 13002 then user_num else 0 end)as 13002_total_usr_num,
+(sum(case function when 13002 then use_count else 0 end)/sum(case function when 13002 then user_num else 0 end) )as 13002_ratio
+from(select sum(a.times)as use_count,count(distinct member_id) as user_num,module,function,date 
+from (select times,member_id ,module,function,DATE_FORMAT(stampdate, '%y%m%d')as date from money.hotspot)as a group by a.date,a.module,a.function)as a
+</sql>
+
+
+
+
+ <sql>
+select date,
+sum(case function when 14001 then use_count else 0 end) AS 14001_total_click,
+sum(case function when 14001 then user_num else 0 end)as 14001_total_usr_num,
+(sum(case function when 14001 then use_count else 0 end)/sum(case function when 14001 then user_num else 0 end) )as 14001_ratio,
+sum(case function when 14002 then use_count else 0 end) AS 14002_total_click,
+sum(case function when 14002 then user_num else 0 end)as 14002_total_usr_num,
+(sum(case function when 14002 then use_count else 0 end)/sum(case function when 14002 then user_num else 0 end) )as 14002_ratio,
+sum(case function when 14003 then use_count else 0 end) AS 14003_total_click,
+sum(case function when 14003 then user_num else 0 end)as 14003_total_usr_num,
+(sum(case function when 14003 then use_count else 0 end)/sum(case function when 14003 then user_num else 0 end) )as 14003_ratio,
+sum(case function when 14004 then use_count else 0 end) AS 14004_total_click,
+sum(case function when 14004 then user_num else 0 end)as 14004_total_usr_num,
+(sum(case function when 14004 then use_count else 0 end)/sum(case function when 14004 then user_num else 0 end) )as 14004_ratio,
+sum(case function when 140041 then use_count else 0 end) AS 140041_total_click,
+sum(case function when 140041 then user_num else 0 end)as 140041_total_usr_num,
+(sum(case function when 140041 then use_count else 0 end)/sum(case function when 140041 then user_num else 0 end) )as 140041_ratio,
+sum(case function when 140042 then use_count else 0 end) AS 140042_total_click,
+sum(case function when 140042 then user_num else 0 end)as 140042_total_usr_num,
+(sum(case function when 140042 then use_count else 0 end)/sum(case function when 140042 then user_num else 0 end) )as 140042_ratio,
+sum(case function when 140043 then use_count else 0 end) AS 140043_total_click,
+sum(case function when 140043 then user_num else 0 end)as 140043_total_usr_num,
+(sum(case function when 140043 then use_count else 0 end)/sum(case function when 140043 then user_num else 0 end) )as 140043_ratio,
+sum(case function when 14005 then use_count else 0 end) AS 14005_total_click,
+sum(case function when 14005 then user_num else 0 end)as 14005_total_usr_num,
+(sum(case function when 14005 then use_count else 0 end)/sum(case function when 14005 then user_num else 0 end) )as 14005_ratio,
+sum(case function when 14006 then use_count else 0 end) AS 14006_total_click,
+sum(case function when 14006 then user_num else 0 end)as 14006_total_usr_num,
+(sum(case function when 14006 then use_count else 0 end)/sum(case function when 14006 then user_num else 0 end) )as 14006_ratio,
+sum(case function when 14007 then use_count else 0 end) AS 14007_total_click,
+sum(case function when 14007 then user_num else 0 end)as 14007_total_usr_num,
+(sum(case function when 14007 then use_count else 0 end)/sum(case function when 14007 then user_num else 0 end) )as 14007_ratio,
+sum(case function when 14008 then use_count else 0 end) AS 14008_total_click,
+sum(case function when 14008 then user_num else 0 end)as 14008_total_usr_num,
+(sum(case function when 14008 then use_count else 0 end)/sum(case function when 14008 then user_num else 0 end) )as 14008_ratio,
+sum(case function when 14009 then use_count else 0 end) AS 14009_total_click,
+sum(case function when 14009 then user_num else 0 end)as 14009_total_usr_num,
+(sum(case function when 14009 then use_count else 0 end)/sum(case function when 14009 then user_num else 0 end) )as 14009_ratio
+from(select sum(a.times)as use_count,count(distinct member_id) as user_num,module,function,date 
+from (select times,member_id ,module,function,DATE_FORMAT(stampdate, '%y%m%d')as date from money.hotspot)as a group by a.date,a.module,a.function)as a
+ </sql>
+</req>		
+</root>

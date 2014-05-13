@@ -1,0 +1,18 @@
+CREATE temporary TABLE `credit_transaction` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `date` int(10) unsigned DEFAULT NULL COMMENT '时间',
+  `raffle_user_num` int(10) unsigned DEFAULT NULL COMMENT '抽奖总用户数',
+  `raffle_count` int(10) unsigned DEFAULT NULL COMMENT '抽奖总次数', 
+  `credit_user_num` int(10) unsigned DEFAULT NULL COMMENT '积分发放用户数',
+  `credit_issue` int(10) unsigned DEFAULT NULL COMMENT '积分发放量',
+  `ali_usernum` int(10) unsigned DEFAULT NULL COMMENT '积分兑换支付宝的用户数',
+  `ali_point` int(10) unsigned DEFAULT NULL COMMENT '积分兑换支付宝的数量',
+  `exchange_cell_usernum` int(10) unsigned DEFAULT NULL COMMENT '积分兑换话费用户数',
+  `exchange_cell_point_count` int(10) unsigned DEFAULT NULL COMMENT '积分兑换话费量',
+  `scheme1` int(10) unsigned DEFAULT NULL COMMENT '方案1',
+  `scheme2` int(10) unsigned DEFAULT NULL COMMENT '方案2',
+  `scheme3` int(10) unsigned DEFAULT NULL COMMENT '方案3',
+  `scheme4` int(10) unsigned DEFAULT NULL COMMENT '方案4',
+  `scheme5` int(10) unsigned DEFAULT NULL COMMENT '方案5',
+  PRIMARY KEY (`id`),
+) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='赚金币兑换数据表'
