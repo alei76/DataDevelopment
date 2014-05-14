@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root>
 
+<req comment="基础数据表">
+<col 当日服务启动量>
+ 
+</col>
 
-<req>
 </req>
 
 

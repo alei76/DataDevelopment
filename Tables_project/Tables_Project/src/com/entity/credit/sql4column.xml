@@ -98,6 +98,9 @@ select z.qid,a.launch_count,b.active_count,c.download_count,d.third_count from (
 </python>
 
 <allsql comment="根据渠道来拼接">
+//active count,download_count,third_count  是通过  member_app_data 和member 两个表格拼接而成
+select 20140423,b.qid as qid,count(distinct a.member_id)as active_count,count(distinct (case a.usetype when 4 then a.member_id else 0 end))-1 as download_count,count(distinct(case a.usetype when 2 then a.member_id else 0 end))-1 as third_count from money.member_app_data as a left join money.member as b on a.member_id=b.id where a.inputtime>unix_timestamp('20140423') and a.inputtime<unix_timestamp('20140424') group by b.qid
+
 </allsql>
 
 
