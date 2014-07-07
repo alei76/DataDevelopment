@@ -5,10 +5,8 @@
 </pydev_pathproperty>
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 2.7</pydev_property>
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">Default</pydev_property>
+
 <pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
-<path>E:\lib\pyquery-1.2.8.zip</path>
-<path>E:\lib\pyquery-1.2.8</path>
-<path>E:\lib\pyquery-1.2.8\pyquery</path>
-<path>E:\lib\pyquery-1.2.8\pyquery.egg-info</path>
+<path>/home/sunxd/mrepo/workSpace/coding/gitRepo/lib/libPython/pyquery-1.2.8.zip</path>
 </pydev_pathproperty>
 </pydev_project>

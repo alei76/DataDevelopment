@@ -3,7 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="pymachine"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/CDC-1.1%Foundation-1.1"/>
-	<classpathentry kind="lib" path="C:/jython2.5.1/jython.jar"/>
 	<classpathentry kind="lib" path="mysql-connector-java-5.0.6-bin.jar"/>
+	<classpathentry kind="lib" path="jython-standalone-2.5.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
