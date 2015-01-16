@@ -8,10 +8,10 @@ import numpy;
 from numpy import *;
 ##################
 import matplotlib as mpl
-import pylab as p
+#import pylab as p
 #import matplotlib.axes3d as p3
-from mpl_toolkits.mplot3d import axes3d;#没有错误,只是pydev没有解析好
-import mpl_toolkits.mplot3d.axes3d as p3;#没有错误,只是pydev没有解析好
+#from mpl_toolkits.mplot3d import axes3d;#没有错误,只是pydev没有解析好
+#import mpl_toolkits.mplot3d.axes3d as p3;#没有错误,只是pydev没有解析好
 
 class simpleBayesian:
     def mgenDataset(self):
@@ -45,7 +45,7 @@ class simpleBayesian:
         beta_0=0.3 #precision(inverse of the likelihood distribution),not updated
         for i in range(10):#take sequencial input data (x,t) to the learning engine
             #self.visualize3D(w0_mesh, w1_mesh, prior_mesh)
-            self.mheat(w0_mesh, w1_mesh, prior_mesh)
+            #self.mheat(w0_mesh, w1_mesh, prior_mesh)
             print 'sequencial input'
             x,t=gen.mgenDataset()#generate one pair of data(x,y)
             print([x,t])
@@ -53,18 +53,22 @@ class simpleBayesian:
             #self.visualize3D(w0_mesh, w1_mesh, likeli_mesh)
             self.mheat(w0_mesh, w1_mesh, likeli_mesh)
             posterior_mesh=numpy.multiply(prior_mesh,likeli_mesh)
-            prior_mesh=posterior_mesh
+            prior_mesh=posterior_mesh/sum(posterior_mesh)
             print(prior_mesh)
+        
+            import heatmap;
+            hm = heatmap.Heatmap()
+            img = hm.heatmap([[1,2,3],[4,2,6]])
     def mheat(self,x,y,z):
-       
-        p.figure()
-        p.hexbin(x, y, z)      
+        a=1;
+        #p.figure()
+        #p.hexbin(x, y, z)      
     def visualize3D(self,x,y,z):
         import matplotlib as mpl
         import pylab as p
         #import matplotlib.axes3d as p3
-        from mpl_toolkits.mplot3d import axes3d;#没有错误,只是pydev没有解析好
-        import mpl_toolkits.mplot3d.axes3d as p3;#没有错误,只是pydev没有解析好
+        #from mpl_toolkits.mplot3d import axes3d;#没有错误,只是pydev没有解析好
+        #import mpl_toolkits.mplot3d.axes3d as p3;#没有错误,只是pydev没有解析好
         fig=p.figure()
         ax = p3.Axes3D(fig)
         ax.plot_wireframe(x,y,z)
@@ -100,8 +104,19 @@ class simpleBayesian:
         plt.figure()
         plt.hexbin(xx, yy, zz)
         plt.show()
+    def heatMapDemo(self):
+        import heatmap
+        import random
+
+        hm = heatmap.Heatmap()
+        pts = [(random.uniform(-77.012, -77.050), random.uniform(38.888, 38.910)) for x in range(100)]
+        img=hm.heatmap(pts)
+        
+        #hm.saveKML("data.kml")
 
 if __name__ == "__main__":
     hh=simpleBayesian()
-    hh.mexec()
+    hh.heatMapDemo()
+    
+    #hh.mexec()
     print 'over'

@@ -1,0 +1,10 @@
+.classpath
+.project
+*~
+.*crc
+data/
+target/
+.DS_Store
+.svn/
+*/.svn/
+/bin

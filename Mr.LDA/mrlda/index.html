@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Mr.LDA: Scalable Topic Modeling Using Variational Inference in MapReduce</title>
+    <link rel="stylesheet" href="docs/stylesheets/styles.css">
+    <link rel="stylesheet" href="docs/stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Mr.LDA</h1>
+        <p>Scalable Topic Modeling Using Variational Inference in MapReduce</p>
+        <p class="view"><a href="https://github.com/lintool/Mr.LDA">View the Project on GitHub <small>lintool/Mr.LDA</small></a></p>
+      </header>
+      <section>
+
+<h2>Introduction</h2>
+
+<p>Mr.LDA is an open-source package for flexible, scalable, multilingual topic
+modeling using variational inference in MapReduce.</p>
+
+<p>Latent Dirichlet Allocation (LDA) and related topic modeling
+technique are useful for exploring document collections. Because of
+the increasing prevalence of large datasets, there is a need to
+improve the scalability of inference for LDA. Unlike other techniques
+that use Gibbs sampling, Mr.LDA uses variational inference, which
+easily fits into a distributed environment. More importantly, this
+variational implementation, unlike highly tuned and specialized
+implementations based on Gibbs sampling, is easily extensible &mdash;
+examples include informed priors to guide topic discovery and
+extracting topics from a multilingual corpus.</p>
+
+<p>More details are described in our paper:</p>
+
+<p style="padding-left: 25px">
+Ke Zhai, Jordan Boyd-Graber, Nima Asadi, and Mohamad Alkhouja. <a href="http://www2012.wwwconference.org/proceedings/proceedings/p879.pdf"><b>Mr. LDA: A Flexible Large Scale Topic Modeling Package using Variational Inference in MapReduce.</b></a> <i>Proceedings of the 21th International World Wide Web Conference (WWW 2012)</i>, 2012, pages 879-888, Lyon, France.
+[<a href="http://umiacs.umd.edu/~jbg/docs/2012_www_slides.pdf">slides</a>]
+</p>
+
+<p>Mr.LDA was developed in the context of
+our <a href="http://lintool.github.io/CCF-1018625/">NSF-funded project</a>
+on Cross-Language Bayesian Models for Web-Scale Text Analysis Using
+MapReduce (CCF-1018625).</p>
+
+<h2>Getting Started</h2>
+
+<p>For instructions on getting started, look at
+the <a href="https://github.com/lintool/Mr.LDA">readme</a>.</p>
+
+<h2>Acknowledgments</h2>
+
+<p>This work has been supported by the US NSF under awards IIS-0916043
+and CCF-1018625. Any opinions, findings, or conclusions are the
+researchers and do not necessarily reflect those of the sponsors.</p>
+
+</section>
+      <footer>
+        <p><small>Theme based on <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="docs/js/scale.fix.js"></script>
+  </body>
+</html>

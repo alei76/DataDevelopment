@@ -7,6 +7,6 @@
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">Default</pydev_property>
 
 <pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
-<path>/home/sunxd/mrepo/workSpace/coding/gitRepo/lib/libPython/pyquery-1.2.8.zip</path>
+<path>/home/sunxd/mrepo/workSpace/coding/gitRepo/libs/libPython/pyquery-1.2.8.zip</path>
 </pydev_pathproperty>
 </pydev_project>
